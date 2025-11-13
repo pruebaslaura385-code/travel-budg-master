@@ -19,7 +19,7 @@ const Dashboard = () => {
     
     const totalInUSD = areaBudgetsFiltered.reduce((sum, budget) => {
       const dailyTotal = budget.dailyExpenses.reduce(
-        (dSum, d) => dSum + d.lunch + d.transport + d.events, 0
+        (dSum, day) => dSum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
       );
       const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
       const total = dailyTotal + generalTotal;
@@ -35,7 +35,7 @@ const Dashboard = () => {
     .filter(b => b.status === 'Aprobado')
     .reduce((sum, budget) => {
       const dailyTotal = budget.dailyExpenses.reduce(
-        (dSum, d) => dSum + d.lunch + d.transport + d.events, 0
+        (dSum, day) => dSum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
       );
       const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
       const total = dailyTotal + generalTotal;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '@/lib/storage';
-import { Currency, Country, DailyExpense, Budget } from '@/types/budget';
+import { Currency, Country, DailyExpense, Budget, ExpenseItem } from '@/types/budget';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,9 +54,7 @@ const CreateBudget = () => {
         const newDailyExpenses: DailyExpense[] = days.map((date, index) => ({
           id: `day-${index}`,
           date: date.toISOString().split('T')[0],
-          lunch: 0,
-          transport: 0,
-          events: 0,
+          expenses: [],
         }));
         setDailyExpenses(newDailyExpenses);
       }
@@ -79,9 +77,39 @@ const CreateBudget = () => {
     setTravelers(newTravelers);
   };
 
-  const updateDailyExpense = (id: string, field: keyof Omit<DailyExpense, 'id' | 'date'>, value: number) => {
-    setDailyExpenses(dailyExpenses.map(exp => 
-      exp.id === id ? { ...exp, [field]: value } : exp
+  const addExpenseToDay = (dayId: string) => {
+    setDailyExpenses(dailyExpenses.map(day => 
+      day.id === dayId 
+        ? { 
+            ...day, 
+            expenses: [...day.expenses, { 
+              id: `${dayId}-exp-${Date.now()}`, 
+              description: '', 
+              amount: 0 
+            }] 
+          }
+        : day
+    ));
+  };
+
+  const removeExpenseFromDay = (dayId: string, expenseId: string) => {
+    setDailyExpenses(dailyExpenses.map(day => 
+      day.id === dayId 
+        ? { ...day, expenses: day.expenses.filter(exp => exp.id !== expenseId) }
+        : day
+    ));
+  };
+
+  const updateExpense = (dayId: string, expenseId: string, field: keyof Omit<ExpenseItem, 'id'>, value: string | number) => {
+    setDailyExpenses(dailyExpenses.map(day => 
+      day.id === dayId 
+        ? {
+            ...day,
+            expenses: day.expenses.map(exp => 
+              exp.id === expenseId ? { ...exp, [field]: value } : exp
+            )
+          }
+        : day
     ));
   };
 
@@ -152,9 +180,15 @@ const CreateBudget = () => {
                     <SelectValue placeholder="Seleccione un área" />
                   </SelectTrigger>
                   <SelectContent>
-                    {areas.map(area => (
-                      <SelectItem key={area} value={area}>{area}</SelectItem>
-                    ))}
+                    {areas.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No hay áreas disponibles. El administrador debe configurarlas.
+                      </div>
+                    ) : (
+                      areas.map(area => (
+                        <SelectItem key={area} value={area}>{area}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -262,58 +296,72 @@ const CreateBudget = () => {
                 Gastos Diarios ({dailyExpenses.length} días)
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 text-sm font-medium">Fecha</th>
-                      <th className="text-right py-3 px-2 text-sm font-medium">Almuerzos</th>
-                      <th className="text-right py-3 px-2 text-sm font-medium">Transporte</th>
-                      <th className="text-right py-3 px-2 text-sm font-medium">Eventos</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyExpenses.map((expense) => (
-                      <tr key={expense.id} className="border-b border-border">
-                        <td className="py-3 px-2 font-medium">
-                          {format(new Date(expense.date), 'dd MMM yyyy', { locale: es })}
-                        </td>
-                        <td className="py-3 px-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={expense.lunch || ''}
-                            onChange={(e) => updateDailyExpense(expense.id, 'lunch', parseFloat(e.target.value) || 0)}
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="py-3 px-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={expense.transport || ''}
-                            onChange={(e) => updateDailyExpense(expense.id, 'transport', parseFloat(e.target.value) || 0)}
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="py-3 px-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={expense.events || ''}
-                            onChange={(e) => updateDailyExpense(expense.id, 'events', parseFloat(e.target.value) || 0)}
-                            className="text-right"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <CardContent className="space-y-6">
+              {dailyExpenses.map((day) => (
+                <div key={day.id} className="border border-border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-foreground">
+                      {format(new Date(day.date), "EEEE dd 'de' MMMM", { locale: es })}
+                    </h4>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addExpenseToDay(day.id)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar Gasto
+                    </Button>
+                  </div>
+
+                  {day.expenses.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No hay gastos agregados para este día
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {day.expenses.map((expense) => (
+                        <div key={expense.id} className="flex gap-2 items-start">
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Descripción del gasto"
+                              value={expense.description}
+                              onChange={(e) => updateExpense(day.id, expense.id, 'description', e.target.value)}
+                            />
+                          </div>
+                          <div className="w-32">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="Monto"
+                              value={expense.amount || ''}
+                              onChange={(e) => updateExpense(day.id, expense.id, 'amount', parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeExpenseFromDay(day.id, expense.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total del día:</span>
+                      <span className="font-semibold text-foreground">
+                        {formData.currency} {day.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}
