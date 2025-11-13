@@ -11,12 +11,16 @@ export const EXCHANGE_RATES: Record<Currency, number> = {
   EUR: 0.92,
 };
 
+export interface ExpenseItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
 export interface DailyExpense {
   id: string;
   date: string;
-  lunch: number;
-  transport: number;
-  events: number;
+  expenses: ExpenseItem[];
 }
 
 export interface GeneralExpense {

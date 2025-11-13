@@ -35,7 +35,7 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
 
   const handleApprove = (budget: Budget) => {
     const dailyTotal = budget.dailyExpenses.reduce(
-      (sum, d) => sum + d.lunch + d.transport + d.events, 0
+      (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
     );
     const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
     const total = dailyTotal + generalTotal;
@@ -74,7 +74,7 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
 
   const calculateTotal = (budget: Budget) => {
     const dailyTotal = budget.dailyExpenses.reduce(
-      (sum, d) => sum + d.lunch + d.transport + d.events, 0
+      (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
     );
     const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
     return dailyTotal + generalTotal;
@@ -225,26 +225,38 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
               <div>
                 <h4 className="font-semibold mb-3">Gastos Diarios</h4>
                 <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-3 text-sm">Fecha</th>
-                        <th className="text-right p-3 text-sm">Almuerzos</th>
-                        <th className="text-right p-3 text-sm">Transporte</th>
-                        <th className="text-right p-3 text-sm">Eventos</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedBudget.dailyExpenses.map((expense) => (
-                        <tr key={expense.id} className="border-t border-border">
-                          <td className="p-3">{format(new Date(expense.date), 'dd/MM/yyyy', { locale: es })}</td>
-                          <td className="p-3 text-right">{formatCurrency(expense.lunch, selectedBudget.currency)}</td>
-                          <td className="p-3 text-right">{formatCurrency(expense.transport, selectedBudget.currency)}</td>
-                          <td className="p-3 text-right">{formatCurrency(expense.events, selectedBudget.currency)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="space-y-4">
+                    {selectedBudget.dailyExpenses.map((day) => (
+                      <div key={day.id} className="border-b border-border last:border-b-0">
+                        <div className="bg-muted px-4 py-2">
+                          <p className="font-medium">{format(new Date(day.date), 'dd/MM/yyyy', { locale: es })}</p>
+                        </div>
+                        {day.expenses.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-muted-foreground">
+                            Sin gastos registrados
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-border">
+                            {day.expenses.map((expense) => (
+                              <div key={expense.id} className="px-4 py-2 flex justify-between items-center">
+                                <span className="text-sm">{expense.description || 'Sin descripción'}</span>
+                                <span className="font-medium">{formatCurrency(expense.amount, selectedBudget.currency)}</span>
+                              </div>
+                            ))}
+                            <div className="px-4 py-2 flex justify-between items-center bg-muted/50">
+                              <span className="text-sm font-medium">Total del día</span>
+                              <span className="font-semibold">
+                                {formatCurrency(
+                                  day.expenses.reduce((sum, exp) => sum + exp.amount, 0), 
+                                  selectedBudget.currency
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
