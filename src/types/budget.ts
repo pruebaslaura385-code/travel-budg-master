@@ -11,8 +11,11 @@ export const EXCHANGE_RATES: Record<Currency, number> = {
   EUR: 0.92,
 };
 
+export type ExpenseCategory = 'alojamiento' | 'transporte' | 'comida' | 'otros';
+
 export interface ExpenseItem {
   id: string;
+  category: ExpenseCategory;
   description: string;
   amount: number;
 }
