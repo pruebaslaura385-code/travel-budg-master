@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '@/lib/storage';
-import { Currency, Country, DailyExpense, Budget, ExpenseItem } from '@/types/budget';
+import { Currency, Country, DailyExpense, Budget, ExpenseItem, ExpenseCategory } from '@/types/budget';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +83,8 @@ const CreateBudget = () => {
         ? { 
             ...day, 
             expenses: [...day.expenses, { 
-              id: `${dayId}-exp-${Date.now()}`, 
+              id: `${dayId}-exp-${Date.now()}`,
+              category: 'comida' as ExpenseCategory,
               description: '', 
               amount: 0 
             }] 
@@ -100,7 +101,7 @@ const CreateBudget = () => {
     ));
   };
 
-  const updateExpense = (dayId: string, expenseId: string, field: keyof Omit<ExpenseItem, 'id'>, value: string | number) => {
+  const updateExpense = (dayId: string, expenseId: string, field: keyof Omit<ExpenseItem, 'id'>, value: string | number | ExpenseCategory) => {
     setDailyExpenses(dailyExpenses.map(day => 
       day.id === dayId 
         ? {
@@ -112,6 +113,13 @@ const CreateBudget = () => {
         : day
     ));
   };
+
+  const expenseCategories: { value: ExpenseCategory; label: string }[] = [
+    { value: 'alojamiento', label: 'Alojamiento' },
+    { value: 'transporte', label: 'Transporte' },
+    { value: 'comida', label: 'Comida' },
+    { value: 'otros', label: 'Otros Gastos' },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,36 +327,70 @@ const CreateBudget = () => {
                       No hay gastos agregados para este día
                     </p>
                   ) : (
-                    <div className="space-y-2">
-                      {day.expenses.map((expense) => (
-                        <div key={expense.id} className="flex gap-2 items-start">
-                          <div className="flex-1">
-                            <Input
-                              placeholder="Descripción del gasto"
-                              value={expense.description}
-                              onChange={(e) => updateExpense(day.id, expense.id, 'description', e.target.value)}
-                            />
-                          </div>
-                          <div className="w-32">
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="Monto"
-                              value={expense.amount || ''}
-                              onChange={(e) => updateExpense(day.id, expense.id, 'amount', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => removeExpenseFromDay(day.id, expense.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                    <div className="border border-border rounded-md overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="text-left p-2 text-sm font-medium text-foreground">Tipo</th>
+                            <th className="text-left p-2 text-sm font-medium text-foreground">Descripción</th>
+                            <th className="text-left p-2 text-sm font-medium text-foreground w-32">Monto</th>
+                            <th className="w-12"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {day.expenses.map((expense) => (
+                            <tr key={expense.id} className="border-t border-border">
+                              <td className="p-2">
+                                <Select
+                                  value={expense.category}
+                                  onValueChange={(value) => updateExpense(day.id, expense.id, 'category', value as ExpenseCategory)}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {expenseCategories.map(cat => (
+                                      <SelectItem key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  placeholder="Descripción del gasto"
+                                  value={expense.description}
+                                  onChange={(e) => updateExpense(day.id, expense.id, 'description', e.target.value)}
+                                  className="h-9"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={expense.amount || ''}
+                                  onChange={(e) => updateExpense(day.id, expense.id, 'amount', parseFloat(e.target.value) || 0)}
+                                  className="h-9"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9"
+                                  onClick={() => removeExpenseFromDay(day.id, expense.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
 

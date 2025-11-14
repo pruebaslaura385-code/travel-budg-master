@@ -236,22 +236,36 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
                             Sin gastos registrados
                           </div>
                         ) : (
-                          <div className="divide-y divide-border">
-                            {day.expenses.map((expense) => (
-                              <div key={expense.id} className="px-4 py-2 flex justify-between items-center">
-                                <span className="text-sm">{expense.description || 'Sin descripción'}</span>
-                                <span className="font-medium">{formatCurrency(expense.amount, selectedBudget.currency)}</span>
-                              </div>
-                            ))}
-                            <div className="px-4 py-2 flex justify-between items-center bg-muted/50">
-                              <span className="text-sm font-medium">Total del día</span>
-                              <span className="font-semibold">
-                                {formatCurrency(
-                                  day.expenses.reduce((sum, exp) => sum + exp.amount, 0), 
-                                  selectedBudget.currency
-                                )}
-                              </span>
-                            </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-muted/50">
+                                <tr>
+                                  <th className="text-left px-4 py-2 text-sm font-medium">Tipo</th>
+                                  <th className="text-left px-4 py-2 text-sm font-medium">Descripción</th>
+                                  <th className="text-right px-4 py-2 text-sm font-medium">Monto</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border">
+                                {day.expenses.map((expense) => (
+                                  <tr key={expense.id}>
+                                    <td className="px-4 py-2 text-sm capitalize text-muted-foreground">{expense.category}</td>
+                                    <td className="px-4 py-2 text-sm">{expense.description || 'Sin descripción'}</td>
+                                    <td className="px-4 py-2 text-right font-medium">{formatCurrency(expense.amount, selectedBudget.currency)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="bg-muted/50">
+                                  <td colSpan={2} className="px-4 py-2 text-sm font-medium">Total del día</td>
+                                  <td className="px-4 py-2 text-right font-semibold">
+                                    {formatCurrency(
+                                      day.expenses.reduce((sum, exp) => sum + exp.amount, 0), 
+                                      selectedBudget.currency
+                                    )}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
                           </div>
                         )}
                       </div>
