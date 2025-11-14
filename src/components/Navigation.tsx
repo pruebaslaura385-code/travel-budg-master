@@ -11,8 +11,8 @@ const Navigation = ({ currentRole }: NavigationProps) => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['Administrador', 'Aprobador', 'Contador'] },
-    { path: '/presupuestos', label: 'Presupuestos', icon: FileText, roles: ['Solicitante', 'Aprobador', 'Contador'] },
+    { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['Administrador', 'Contador'] },
+    { path: '/presupuestos', label: 'Presupuestos', icon: FileText, roles: ['Solicitante', 'Administrador', 'Contador'] },
     { path: '/crear', label: 'Crear Presupuesto', icon: PlusCircle, roles: ['Solicitante'] },
     { path: '/areas', label: 'Gestión de Áreas', icon: Settings, roles: ['Administrador'] },
   ];

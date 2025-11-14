@@ -1,20 +1,42 @@
 import { UserRole } from '@/types/budget';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plane } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { LogOut, Plane } from 'lucide-react';
 
 interface HeaderProps {
-  currentRole: UserRole;
-  onRoleChange: (role: UserRole) => void;
+  currentRole: UserRole | null;
 }
 
-const Header = ({ currentRole, onRoleChange }: HeaderProps) => {
-  const roles: UserRole[] = ['Solicitante', 'Aprobador', 'Contador', 'Administrador'];
+const Header = ({ currentRole }: HeaderProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: 'Sesión cerrada',
+        description: 'Has cerrado sesión exitosamente',
+      });
+      
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getRoleLabel = (role: UserRole | null) => {
+    if (!role) return 'Cargando...';
+    return role;
+  };
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
@@ -30,22 +52,19 @@ const Header = ({ currentRole, onRoleChange }: HeaderProps) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <label htmlFor="role-select" className="text-sm font-medium text-muted-foreground">
-              Perfil actual:
-            </label>
-            <Select value={currentRole} onValueChange={(value) => onRoleChange(value as UserRole)}>
-              <SelectTrigger id="role-select" className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-sm font-medium text-muted-foreground">Perfil actual:</span>
+              <span className="text-sm font-semibold text-foreground">{getRoleLabel(currentRole)}</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Cerrar Sesión
+            </Button>
           </div>
         </div>
       </div>
