@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Calendar } from 'lucide-react';
+import { convertToUSD, formatCurrency } from '@/lib/currency';
 import { eachDayOfInterval, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -169,6 +170,18 @@ const CreateBudget = () => {
 
   const currencies: Currency[] = ['USD', 'ARS', 'COP', 'BRL', 'EUR'];
   const countries: Country[] = ['Argentina', 'Colombia', 'Brasil', 'España', 'EE. UU.'];
+
+  const calculateTotal = () => {
+    const dailyTotal = dailyExpenses.reduce(
+      (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 
+      0
+    );
+    const generalTotal = generalExpense.accommodation + generalExpense.flights;
+    return dailyTotal + generalTotal;
+  };
+
+  const total = calculateTotal();
+  const totalUSD = convertToUSD(total, formData.currency);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -435,6 +448,46 @@ const CreateBudget = () => {
                   value={generalExpense.flights || ''}
                   onChange={(e) => setGeneralExpense({...generalExpense, flights: parseFloat(e.target.value) || 0})}
                 />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle>Total del Presupuesto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-lg">
+                <span className="font-medium text-muted-foreground">Total en {formData.currency}:</span>
+                <span className="font-bold text-2xl text-foreground">
+                  {formatCurrency(total, formData.currency)}
+                </span>
+              </div>
+              {formData.currency !== 'USD' && (
+                <div className="flex justify-between items-center pt-3 border-t border-border">
+                  <span className="font-medium text-muted-foreground">Equivalente en USD:</span>
+                  <span className="font-bold text-xl text-primary">
+                    {formatCurrency(totalUSD, 'USD')}
+                  </span>
+                </div>
+              )}
+              <div className="pt-3 border-t border-border text-sm text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Gastos diarios:</span>
+                  <span>{formatCurrency(
+                    dailyExpenses.reduce((sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0),
+                    formData.currency
+                  )}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span>Gastos generales:</span>
+                  <span>{formatCurrency(
+                    generalExpense.accommodation + generalExpense.flights,
+                    formData.currency
+                  )}</span>
+                </div>
               </div>
             </div>
           </CardContent>
