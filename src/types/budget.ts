@@ -1,6 +1,6 @@
 export type Currency = 'ARS' | 'COP' | 'BRL' | 'EUR' | 'USD';
 export type BudgetStatus = 'Nuevo' | 'Aprobado' | 'Descartado';
-export type UserRole = 'Solicitante' | 'Aprobador' | 'Contador' | 'Administrador';
+export type UserRole = 'Solicitante' | 'Administrador' | 'Contador';
 export type Country = 'Argentina' | 'Colombia' | 'Brasil' | 'España' | 'EE. UU.';
 
 export const EXCHANGE_RATES: Record<Currency, number> = {

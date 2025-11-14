@@ -91,7 +91,7 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
   };
 
   const filteredBudgets = budgets.filter(b => {
-    if (currentRole === 'Aprobador') return b.status === 'Nuevo';
+    if (currentRole === 'Administrador') return b.status === 'Nuevo';
     return true;
   });
 
@@ -158,7 +158,7 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {currentRole === 'Aprobador' && budget.status === 'Nuevo' && (
+                      {currentRole === 'Administrador' && budget.status === 'Nuevo' && (
                         <>
                           <Button
                             size="sm"
