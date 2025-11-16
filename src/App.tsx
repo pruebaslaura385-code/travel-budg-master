@@ -11,6 +11,8 @@ import BudgetList from '@/pages/BudgetList';
 import CreateBudget from '@/pages/CreateBudget';
 import AreaManagement from '@/pages/AreaManagement';
 import Auth from '@/pages/Auth';
+import UserManagement from '@/pages/UserManagement';
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -66,7 +68,9 @@ const App = () => {
               <Route path="/presupuestos" element={<BudgetList currentRole={role!} />} />
               <Route path="/crear" element={<CreateBudget />} />
               <Route path="/areas" element={<AreaManagement />} />
+              <Route path="/usuarios" element={<UserManagement />} />
               <Route path="/auth" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </BrowserRouter>
