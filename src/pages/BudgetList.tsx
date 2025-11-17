@@ -77,7 +77,8 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
       (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
     );
     const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
-    return dailyTotal + generalTotal;
+    const corporateCardsTotal = (budget.corporateCards || []).reduce((sum, card) => sum + card.amount, 0);
+    return dailyTotal + generalTotal + corporateCardsTotal;
   };
 
   const getStatusBadge = (status: Budget['status']) => {
@@ -287,6 +288,60 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
                   </div>
                 </div>
               </div>
+
+              {selectedBudget.corporateCards && selectedBudget.corporateCards.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Solicitud Tarjetas Corporativas</h4>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-4 py-2 text-sm font-medium">Nombre</th>
+                          <th className="text-right px-4 py-2 text-sm font-medium">Monto</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {selectedBudget.corporateCards.map((card) => (
+                          <tr key={card.id}>
+                            <td className="px-4 py-2 text-sm">{card.name}</td>
+                            <td className="px-4 py-2 text-right font-medium">{formatCurrency(card.amount, selectedBudget.currency)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/50">
+                          <td className="px-4 py-2 text-sm font-medium">Total</td>
+                          <td className="px-4 py-2 text-right font-semibold">
+                            {formatCurrency(
+                              selectedBudget.corporateCards.reduce((sum, card) => sum + card.amount, 0),
+                              selectedBudget.currency
+                            )}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {selectedBudget.exchangeRates && (
+                <div>
+                  <h4 className="font-semibold mb-3">Cotizaciones Utilizadas</h4>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Tasas de cambio al momento de creación del presupuesto
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {Object.entries(selectedBudget.exchangeRates).map(([currency, rate]) => (
+                        <div key={currency} className="flex justify-between items-center text-sm">
+                          <span className="font-medium">{currency}:</span>
+                          <span className="text-muted-foreground">{rate.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between items-center">

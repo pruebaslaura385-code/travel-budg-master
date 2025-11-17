@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      exchange_rate_config: {
+        Row: {
+          api_url: string
+          created_at: string | null
+          currency_code: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_url: string
+          created_at?: string | null
+          currency_code: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_url?: string
+          created_at?: string | null
+          currency_code?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

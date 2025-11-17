@@ -12,6 +12,7 @@ import CreateBudget from '@/pages/CreateBudget';
 import AreaManagement from '@/pages/AreaManagement';
 import Auth from '@/pages/Auth';
 import UserManagement from '@/pages/UserManagement';
+import ExchangeRateConfig from '@/pages/ExchangeRateConfig';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => {
               <Route path="/crear" element={<CreateBudget />} />
               <Route path="/areas" element={<AreaManagement />} />
               <Route path="/usuarios" element={<UserManagement />} />
+              <Route path="/cotizaciones" element={<ExchangeRateConfig />} />
               <Route path="/auth" element={<Navigate to="/" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

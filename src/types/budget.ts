@@ -26,6 +26,12 @@ export interface DailyExpense {
   expenses: ExpenseItem[];
 }
 
+export interface CorporateCard {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 export interface GeneralExpense {
   accommodation: number;
   flights: number;
@@ -47,6 +53,8 @@ export interface Budget {
   currency: Currency;
   dailyExpenses: DailyExpense[];
   generalExpense: GeneralExpense;
+  corporateCards: CorporateCard[];
+  exchangeRates: Record<Currency, number>;
   actualExpense?: ActualExpense;
   status: BudgetStatus;
   createdAt: string;

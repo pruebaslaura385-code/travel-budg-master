@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '@/lib/storage';
-import { Currency, Country, DailyExpense, Budget, ExpenseItem, ExpenseCategory } from '@/types/budget';
+import { Currency, Country, DailyExpense, Budget, ExpenseItem, ExpenseCategory, CorporateCard, EXCHANGE_RATES } from '@/types/budget';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Calendar } from 'lucide-react';
+import { Plus, Trash2, Calendar, Loader2 } from 'lucide-react';
 import { convertToUSD, formatCurrency } from '@/lib/currency';
 import { eachDayOfInterval, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -30,7 +31,7 @@ const CreateBudget = () => {
     startDate: '',
     endDate: '',
     country: '' as Country,
-    currency: 'USD' as Currency,
+    currency: '' as Currency,
   });
   
   const [travelers, setTravelers] = useState<string[]>(['']);
@@ -39,6 +40,8 @@ const CreateBudget = () => {
     accommodation: 0,
     flights: 0,
   });
+  const [corporateCards, setCorporateCards] = useState<CorporateCard[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const areaBudgets = storage.getAreaBudgets();
@@ -122,10 +125,58 @@ const CreateBudget = () => {
     { value: 'otros', label: 'Otros Gastos' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const addCorporateCard = () => {
+    setCorporateCards([...corporateCards, { 
+      id: `card-${Date.now()}`, 
+      name: '', 
+      amount: 0 
+    }]);
+  };
+
+  const removeCorporateCard = (id: string) => {
+    setCorporateCards(corporateCards.filter(card => card.id !== id));
+  };
+
+  const updateCorporateCard = (id: string, field: 'name' | 'amount', value: string | number) => {
+    setCorporateCards(corporateCards.map(card => 
+      card.id === id ? { ...card, [field]: value } : card
+    ));
+  };
+
+  const fetchExchangeRates = async (): Promise<Record<Currency, number>> => {
+    try {
+      const { data: configs } = await supabase
+        .from('exchange_rate_config')
+        .select('*');
+
+      if (!configs || configs.length === 0) {
+        return EXCHANGE_RATES;
+      }
+
+      const rates: Partial<Record<Currency, number>> = {};
+      
+      for (const config of configs) {
+        try {
+          const response = await fetch(config.api_url);
+          const data = await response.json();
+          rates[config.currency_code as Currency] = data.rate || EXCHANGE_RATES[config.currency_code as Currency];
+        } catch (error) {
+          console.error(`Error fetching rate for ${config.currency_code}:`, error);
+          rates[config.currency_code as Currency] = EXCHANGE_RATES[config.currency_code as Currency];
+        }
+      }
+
+      return { ...EXCHANGE_RATES, ...rates };
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+      return EXCHANGE_RATES;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.area || !formData.email || !formData.startDate || !formData.endDate || !formData.country) {
+    if (!formData.area || !formData.email || !formData.startDate || !formData.endDate || !formData.country || !formData.currency) {
       toast({
         title: "Error",
         description: "Por favor complete todos los campos obligatorios",
@@ -143,29 +194,46 @@ const CreateBudget = () => {
       return;
     }
 
-    const budget: Budget = {
-      id: Date.now().toString(),
-      area: formData.area,
-      email: formData.email,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      country: formData.country,
-      travelers: travelers.filter(t => t.trim()),
-      currency: formData.currency,
-      dailyExpenses,
-      generalExpense,
-      status: 'Nuevo',
-      createdAt: new Date().toISOString(),
-    };
+    setLoading(true);
+    
+    try {
+      const exchangeRates = await fetchExchangeRates();
 
-    storage.addBudget(budget);
+      const budget: Budget = {
+        id: Date.now().toString(),
+        area: formData.area,
+        email: formData.email,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        country: formData.country,
+        travelers: travelers.filter(t => t.trim()),
+        currency: formData.currency,
+        dailyExpenses,
+        generalExpense,
+        corporateCards,
+        exchangeRates,
+        status: 'Nuevo',
+        createdAt: new Date().toISOString(),
+      };
 
-    toast({
-      title: "Presupuesto creado",
-      description: "El presupuesto ha sido enviado para aprobación",
-    });
+      storage.addBudget(budget);
 
-    navigate('/presupuestos');
+      toast({
+        title: "Presupuesto creado",
+        description: "El presupuesto ha sido enviado para aprobación",
+      });
+
+      navigate('/presupuestos');
+    } catch (error) {
+      console.error('Error creating budget:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un error al crear el presupuesto",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const currencies: Currency[] = ['USD', 'ARS', 'COP', 'BRL', 'EUR'];
@@ -177,7 +245,8 @@ const CreateBudget = () => {
       0
     );
     const generalTotal = generalExpense.accommodation + generalExpense.flights;
-    return dailyTotal + generalTotal;
+    const corporateCardsTotal = corporateCards.reduce((sum, card) => sum + card.amount, 0);
+    return dailyTotal + generalTotal + corporateCardsTotal;
   };
 
   const total = calculateTotal();
@@ -263,7 +332,7 @@ const CreateBudget = () => {
                 <Label htmlFor="currency">Moneda *</Label>
                 <Select value={formData.currency} onValueChange={(value) => setFormData({...formData, currency: value as Currency})}>
                   <SelectTrigger id="currency">
-                    <SelectValue />
+                    <SelectValue placeholder="Seleccione una moneda" />
                   </SelectTrigger>
                   <SelectContent>
                     {currencies.map(currency => (
@@ -453,6 +522,67 @@ const CreateBudget = () => {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Solicitud Tarjetas Corporativas</span>
+              <Button
+                type="button"
+                onClick={addCorporateCard}
+                size="sm"
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Tarjeta
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {corporateCards.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No hay tarjetas corporativas solicitadas
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {corporateCards.map((card) => (
+                  <div key={card.id} className="flex gap-3 items-end">
+                    <div className="flex-1">
+                      <Label htmlFor={`card-name-${card.id}`}>Nombre</Label>
+                      <Input
+                        id={`card-name-${card.id}`}
+                        type="text"
+                        value={card.name}
+                        onChange={(e) => updateCorporateCard(card.id, 'name', e.target.value)}
+                        placeholder="Nombre del titular"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor={`card-amount-${card.id}`}>Monto</Label>
+                      <Input
+                        id={`card-amount-${card.id}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={card.amount || ''}
+                        onChange={(e) => updateCorporateCard(card.id, 'amount', parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => removeCorporateCard(card.id)}
+                      variant="destructive"
+                      size="icon"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle>Total del Presupuesto</CardTitle>
@@ -488,17 +618,33 @@ const CreateBudget = () => {
                     formData.currency
                   )}</span>
                 </div>
+                {corporateCards.length > 0 && (
+                  <div className="flex justify-between mt-1">
+                    <span>Tarjetas corporativas:</span>
+                    <span>{formatCurrency(
+                      corporateCards.reduce((sum, card) => sum + card.amount, 0),
+                      formData.currency
+                    )}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/presupuestos')}>
+          <Button type="button" variant="outline" onClick={() => navigate('/presupuestos')} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit">
-            Crear Presupuesto
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              'Crear Presupuesto'
+            )}
           </Button>
         </div>
       </form>
