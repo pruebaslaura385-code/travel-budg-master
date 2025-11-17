@@ -92,12 +92,8 @@ const Auth = () => {
             {loading ? 'Conectando...' : 'Iniciar sesión con Google'}
           </Button>
 
-          <div className="text-xs text-muted-foreground text-center space-y-2">
+          <div className="text-xs text-muted-foreground text-center">
             <p>Al iniciar sesión aceptas acceder únicamente con tu cuenta corporativa.</p>
-            <p>
-              El primer usuario registrado será asignado como <strong>Administrador</strong>.
-              Los demás usuarios serán asignados como <strong>Solicitante</strong> por defecto.
-            </p>
           </div>
         </CardContent>
       </Card>
