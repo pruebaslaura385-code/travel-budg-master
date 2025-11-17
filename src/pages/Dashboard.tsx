@@ -22,7 +22,8 @@ const Dashboard = () => {
         (dSum, day) => dSum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
       );
       const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
-      const total = dailyTotal + generalTotal;
+      const corporateCardsTotal = (budget.corporateCards || []).reduce((sum, card) => sum + card.amount, 0);
+      const total = dailyTotal + generalTotal + corporateCardsTotal;
       return sum + convertToUSD(total, budget.currency);
     }, 0);
 
@@ -38,7 +39,8 @@ const Dashboard = () => {
         (dSum, day) => dSum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
       );
       const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
-      const total = dailyTotal + generalTotal;
+      const corporateCardsTotal = (budget.corporateCards || []).reduce((sum, card) => sum + card.amount, 0);
+      const total = dailyTotal + generalTotal + corporateCardsTotal;
       return sum + convertToUSD(total, budget.currency);
     }, 0);
 

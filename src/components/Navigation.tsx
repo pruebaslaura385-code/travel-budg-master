@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, PlusCircle, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Settings, Users, DollarSign } from 'lucide-react';
 import { UserRole } from '@/types/budget';
 
 interface NavigationProps {
@@ -16,6 +16,7 @@ const Navigation = ({ currentRole }: NavigationProps) => {
     { path: '/crear', label: 'Crear Presupuesto', icon: PlusCircle, roles: ['Solicitante'] },
     { path: '/areas', label: 'Gestión de Áreas', icon: Settings, roles: ['Administrador'] },
     { path: '/usuarios', label: 'Gestión de Usuarios', icon: Users, roles: ['Administrador'] },
+    { path: '/cotizaciones', label: 'Cotizaciones', icon: DollarSign, roles: ['Administrador'] },
   ];
 
   const visibleItems = navItems.filter(item => 
