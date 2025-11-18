@@ -14,9 +14,9 @@ const Navigation = ({ currentRole }: NavigationProps) => {
     { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['Administrador', 'Contador'] },
     { path: '/presupuestos', label: 'Presupuestos', icon: FileText, roles: ['Solicitante', 'Administrador', 'Contador'] },
     { path: '/crear', label: 'Crear Presupuesto', icon: PlusCircle, roles: ['Solicitante'] },
-    { path: '/areas', label: 'Gestión de Áreas', icon: Settings, roles: ['Administrador'] },
-    { path: '/usuarios', label: 'Gestión de Usuarios', icon: Users, roles: ['Administrador'] },
-    { path: '/cotizaciones', label: 'Cotizaciones', icon: DollarSign, roles: ['Administrador'] },
+    { path: '/admin/areas', label: 'Gestión de Áreas', icon: Settings, roles: ['Administrador'] },
+    { path: '/admin/users', label: 'Gestión de Usuarios', icon: Users, roles: ['Administrador'] },
+    { path: '/admin/exchange-rates', label: 'Cotizaciones', icon: DollarSign, roles: ['Administrador'] },
   ];
 
   const visibleItems = navItems.filter(item => 
