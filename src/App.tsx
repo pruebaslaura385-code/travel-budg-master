@@ -68,9 +68,30 @@ const App = () => {
               />
               <Route path="/presupuestos" element={<BudgetList currentRole={role!} />} />
               <Route path="/crear" element={<CreateBudget />} />
-              <Route path="/areas" element={<AreaManagement />} />
-              <Route path="/usuarios" element={<UserManagement />} />
-              <Route path="/cotizaciones" element={<ExchangeRateConfig />} />
+              <Route 
+                path="/admin/areas" 
+                element={
+                  role === 'Administrador' ? 
+                    <AreaManagement /> : 
+                    <Navigate to="/" replace />
+                } 
+              />
+              <Route 
+                path="/admin/users" 
+                element={
+                  role === 'Administrador' ? 
+                    <UserManagement /> : 
+                    <Navigate to="/" replace />
+                } 
+              />
+              <Route 
+                path="/admin/exchange-rates" 
+                element={
+                  role === 'Administrador' ? 
+                    <ExchangeRateConfig /> : 
+                    <Navigate to="/" replace />
+                } 
+              />
               <Route path="/auth" element={<Navigate to="/" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
