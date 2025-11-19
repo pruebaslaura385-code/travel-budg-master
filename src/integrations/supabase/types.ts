@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      budgets: {
+        Row: {
+          actual_expense: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          area: string
+          corporate_cards: Json
+          country: string
+          created_at: string
+          currency: string
+          daily_expenses: Json
+          email: string
+          end_date: string
+          exchange_rates: Json
+          general_expense: Json
+          id: string
+          start_date: string
+          status: string
+          travelers: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_expense?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          area: string
+          corporate_cards?: Json
+          country: string
+          created_at?: string
+          currency: string
+          daily_expenses?: Json
+          email: string
+          end_date: string
+          exchange_rates?: Json
+          general_expense?: Json
+          id?: string
+          start_date: string
+          status?: string
+          travelers?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_expense?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          area?: string
+          corporate_cards?: Json
+          country?: string
+          created_at?: string
+          currency?: string
+          daily_expenses?: Json
+          email?: string
+          end_date?: string
+          exchange_rates?: Json
+          general_expense?: Json
+          id?: string
+          start_date?: string
+          status?: string
+          travelers?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exchange_rate_config: {
         Row: {
           api_url: string

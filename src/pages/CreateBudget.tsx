@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { storage } from '@/lib/storage';
 import { Currency, Country, DailyExpense, Budget, ExpenseItem, ExpenseCategory, CorporateCard, EXCHANGE_RATES } from '@/types/budget';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import { es } from 'date-fns/locale';
 const CreateBudget = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userId } = useUserRole();
   
   const [areas, setAreas] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -194,29 +196,41 @@ const CreateBudget = () => {
       return;
     }
 
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Debe iniciar sesión para crear un presupuesto",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
       const exchangeRates = await fetchExchangeRates();
 
-      const budget: Budget = {
-        id: Date.now().toString(),
+      const budgetData = {
+        user_id: userId,
         area: formData.area,
         email: formData.email,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
         country: formData.country,
-        travelers: travelers.filter(t => t.trim()),
+        travelers: travelers.filter(t => t.trim()) as unknown as any,
         currency: formData.currency,
-        dailyExpenses,
-        generalExpense,
-        corporateCards,
-        exchangeRates,
+        daily_expenses: dailyExpenses as unknown as any,
+        general_expense: generalExpense as unknown as any,
+        corporate_cards: corporateCards as unknown as any,
+        exchange_rates: exchangeRates as unknown as any,
         status: 'Nuevo',
-        createdAt: new Date().toISOString(),
       };
 
-      storage.addBudget(budget);
+      const { error } = await supabase
+        .from('budgets')
+        .insert([budgetData]);
+
+      if (error) throw error;
 
       toast({
         title: "Presupuesto creado",
