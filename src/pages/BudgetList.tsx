@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { storage } from '@/lib/storage';
-import { Budget, UserRole } from '@/types/budget';
+import { Budget, UserRole, Country, Currency, DailyExpense, GeneralExpense, CorporateCard, ActualExpense, BudgetStatus } from '@/types/budget';
+import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,52 +26,128 @@ const BudgetList = ({ currentRole }: BudgetListProps) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const { toast } = useToast();
+  const { userId } = useUserRole();
 
   useEffect(() => {
-    loadBudgets();
-  }, []);
+    if (userId) {
+      loadBudgets();
+    }
+  }, [userId, currentRole]);
 
-  const loadBudgets = () => {
-    setBudgets(storage.getBudgets());
+  const loadBudgets = async () => {
+    try {
+      let query = supabase
+        .from('budgets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // If user is Solicitante, only show their own budgets
+      if (currentRole === 'Solicitante') {
+        query = query.eq('user_id', userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Transform database format to app format
+      const transformedBudgets: Budget[] = (data || []).map(budget => ({
+        id: budget.id,
+        area: budget.area,
+        email: budget.email,
+        startDate: budget.start_date,
+        endDate: budget.end_date,
+        country: budget.country as Country,
+        travelers: budget.travelers as unknown as string[],
+        currency: budget.currency as Currency,
+        dailyExpenses: budget.daily_expenses as unknown as DailyExpense[],
+        generalExpense: budget.general_expense as unknown as GeneralExpense,
+        corporateCards: budget.corporate_cards as unknown as CorporateCard[],
+        exchangeRates: budget.exchange_rates as unknown as Record<Currency, number>,
+        actualExpense: budget.actual_expense as unknown as ActualExpense | undefined,
+        status: budget.status as BudgetStatus,
+        createdAt: budget.created_at,
+        approvedBy: budget.approved_by || undefined,
+        approvedAt: budget.approved_at || undefined,
+      }));
+
+      setBudgets(transformedBudgets);
+    } catch (error) {
+      console.error('Error loading budgets:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los presupuestos",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleApprove = (budget: Budget) => {
-    const dailyTotal = budget.dailyExpenses.reduce(
-      (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
-    );
-    const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
-    const total = dailyTotal + generalTotal;
-    const totalUSD = convertToUSD(total, budget.currency);
+  const handleApprove = async (budget: Budget) => {
+    try {
+      const dailyTotal = budget.dailyExpenses.reduce(
+        (sum, day) => sum + day.expenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0
+      );
+      const generalTotal = budget.generalExpense.accommodation + budget.generalExpense.flights;
+      const total = dailyTotal + generalTotal;
+      const totalUSD = convertToUSD(total, budget.currency);
 
-    storage.updateBudget(budget.id, {
-      status: 'Aprobado',
-      approvedBy: currentRole,
-      approvedAt: new Date().toISOString(),
-    });
-    storage.addToUsedBudget(budget.area, totalUSD);
-    
-    loadBudgets();
-    setSelectedBudget(null);
-    
-    toast({
-      title: "Presupuesto aprobado",
-      description: `El presupuesto para ${budget.area} ha sido aprobado`,
-    });
+      const { error } = await supabase
+        .from('budgets')
+        .update({
+          status: 'Aprobado',
+          approved_by: currentRole,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', budget.id);
+
+      if (error) throw error;
+
+      storage.addToUsedBudget(budget.area, totalUSD);
+      
+      loadBudgets();
+      setSelectedBudget(null);
+      
+      toast({
+        title: "Presupuesto aprobado",
+        description: `El presupuesto para ${budget.area} ha sido aprobado`,
+      });
+    } catch (error) {
+      console.error('Error approving budget:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo aprobar el presupuesto",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleReject = (budget: Budget) => {
-    storage.updateBudget(budget.id, {
-      status: 'Descartado',
-    });
-    
-    loadBudgets();
-    setSelectedBudget(null);
-    
-    toast({
-      title: "Presupuesto descartado",
-      description: `El presupuesto para ${budget.area} ha sido descartado`,
-      variant: "destructive",
-    });
+  const handleReject = async (budget: Budget) => {
+    try {
+      const { error } = await supabase
+        .from('budgets')
+        .update({
+          status: 'Descartado',
+        })
+        .eq('id', budget.id);
+
+      if (error) throw error;
+      
+      loadBudgets();
+      setSelectedBudget(null);
+      
+      toast({
+        title: "Presupuesto descartado",
+        description: `El presupuesto para ${budget.area} ha sido descartado`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Error rejecting budget:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo descartar el presupuesto",
+        variant: "destructive",
+      });
+    }
   };
 
   const calculateTotal = (budget: Budget) => {
