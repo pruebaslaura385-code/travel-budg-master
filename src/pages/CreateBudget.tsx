@@ -46,9 +46,22 @@ const CreateBudget = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const areaBudgets = storage.getAreaBudgets();
-    setAreas(areaBudgets.map(ab => ab.area));
+    loadAreas();
   }, []);
+
+  const loadAreas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('areas')
+        .select('name')
+        .order('name');
+
+      if (error) throw error;
+      setAreas((data || []).map(a => a.name));
+    } catch (error) {
+      console.error('Error loading areas:', error);
+    }
+  };
 
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
